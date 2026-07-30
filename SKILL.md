@@ -8,6 +8,13 @@ description: Executes a software-defined value investing protocol and state mach
 ## Overview
 This skill operates as a strict, specification-driven investment lifecycle state machine. Rather than offering broad conversational opinions, the agent MUST follow the hard-coded specifications located in `spec/` to guide research, enforce trade gatekeeping, and maintain persistent investment thesis cards.
 
+## Pre-Trade Gatekeeper Check (Emotional Circuit-Breaker & Dynamic Limits)
+Before conducting analysis or evaluating a trade entry, check if the user is acting under emotional pressure, FOMO, or exceeding concentration limits:
+- **Dynamic Config Reading**: Dynamically read the user's specific `concentration_limits` configuration from their portfolio repository (`portfolio.json`). Do NOT hardcode numeric limits in the skill.
+- If urgency or concentration threshold overflow is detected, initiate the **3 Cold-Water Probing Questions**.
+- Enforce gradual position sizing and require temporary exception documentation for extreme allocations.
+- Refer to [anti_impulse_protocol.md](references/anti_impulse_protocol.md) for detailed gatekeeper procedures.
+
 ---
 
 ## Specifications Directory & Contracts
