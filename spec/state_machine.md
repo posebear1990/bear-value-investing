@@ -4,16 +4,32 @@ This document specifies the mandatory states, transition triggers, and agent act
 
 ---
 
+## Write-Guard Interception Protocol (写屏障保护规程) 🔒
+
+To prevent the user (and the AI agent) from accidentally or unconsciously bypassing the value investing discipline, **THE AGENT IS STRICTLY FORBIDDEN FROM MUTATING `portfolio.json` OR THESIS CARDS DIRECTLY** based on casual remarks (e.g., *"I bought 100 more shares of X"*, *"Change my position of Y to Z"*).
+
+### Mandatory Interception Rule:
+Whenever the user requests or mentions a position size modification:
+1. **HALT LEDGER MUTATION**: Do NOT modify `shares_count` or `portfolio.json` immediately.
+2. **FORCE STATE ROUTING**: Route the request to `INIT_BUY`, `ACTION_ADD`, or `ACTION_SELL`.
+3. **EXECUTE SOCRATIC PROBE**: Ask the user:
+   > *"You are updating your position in [TICKER]. To maintain our investment discipline:
+   > 1. What is your fundamental rationale and business logic for this change?
+   > 2. Has there been a change in earnings, moat, or valuation safety margin?"*
+4. **MUTATE ONLY UPON RATIONALE CONFIRMATION**: Update `portfolio.json` and append a transaction log ONLY after the user provides their fundamental logic.
+
+---
+
 ## State Diagram & Transitions
 
 ```
 [IDLE] 
   │
   ├── Trigger: User wants to buy new stock ─────────> [STATE: INIT_BUY]
-  ├── Trigger: User wants to add position ──────────> [STATE: ACTION_ADD]
-  ├── Trigger: User wants to sell / trim position ──> [STATE: ACTION_SELL]
+  ├── Trigger: User wants to add position ──────────> [STATE: ACTION_ADD] (Intercept & Probe)
+  ├── Trigger: User wants to sell / trim position ──> [STATE: ACTION_SELL] (Intercept & Probe)
   ├── Trigger: Periodic check / Routine review ─────> [STATE: ROUTINE_REVIEW]
-  ├── Trigger: "Audit portfolio" / "持仓巡检" ───────> [STATE: AUDIT_PORTFOLIO] ⚡️ NEW
+  ├── Trigger: "Audit portfolio" / "持仓巡检" ───────> [STATE: AUDIT_PORTFOLIO]
   └── Trigger: "Refresh prices" / "更新股价" ────────> [STATE: REFRESH_PRICES]
 ```
 
@@ -69,7 +85,7 @@ This document specifies the mandatory states, transition triggers, and agent act
 
 ---
 
-## State 4: `AUDIT_PORTFOLIO` (Active Portfolio Audit & Anti-Drift Inspection) ⚡️
+## State 4: `AUDIT_PORTFOLIO` (Active Portfolio Audit & Anti-Drift Inspection)
 
 ### Mandatory Pre-conditions
 - Portfolio ledger `../bear-investment-journal/portfolio.json` MUST exist.
