@@ -30,6 +30,7 @@ Whenever the user requests or mentions a position size modification:
   ├── Trigger: User wants to sell / trim position ──> [STATE: ACTION_SELL] (Intercept & Probe)
   ├── Trigger: Periodic check / Routine review ─────> [STATE: ROUTINE_REVIEW]
   ├── Trigger: "Audit portfolio" / "持仓巡检" ───────> [STATE: AUDIT_PORTFOLIO]
+  ├── Trigger: "Generate report" / "生成复盘报告" ───> [STATE: GENERATE_REPORT] ⚡️ NEW
   └── Trigger: "Refresh prices" / "更新股价" ────────> [STATE: REFRESH_PRICES]
 ```
 
@@ -106,3 +107,18 @@ Whenever the user requests or mentions a position size modification:
        > Option A: Execute sell/trim order according to pre-committed discipline.
        > Option B: Provide a NEW fundamental thesis explaining why the old exit condition is no longer applicable, and update your thesis card."
 4. **Audit Summary**: Output a structured Audit Summary Table detailing positions needing user decision.
+
+---
+
+## State 5: `GENERATE_REPORT` (Periodic Review & Executive Report Export) ⚡️
+
+### Execution Workflow
+1. **Auto-Refresh Data**: Run `python3 ../bear-investment-journal/scripts/fetch_prices.py` to calculate exact current values, returns, and concentration levels.
+2. **Assemble Portfolio Report**: Populate `../bear-investment-journal/templates/report_template.md` with:
+   - Total portfolio value, cash reserves, and unrealized P&L.
+   - 3-Tier Concentration Risk Matrix.
+   - Active holdings performance table (cost, current price, return %).
+   - Zero-position Watchlist Pipeline Pool evaluation.
+   - Invalidation and exit trigger checklist.
+3. **Export Report**: Save the final report to `../bear-investment-journal/history/YYYY-MM-DD-portfolio-report.md`.
+4. **Display Summary**: Present the summary to the user in chat.

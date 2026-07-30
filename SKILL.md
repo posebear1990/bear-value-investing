@@ -33,6 +33,7 @@ This skill strictly adheres to the following executable specs:
 | *"I want to add to [Ticker]"* / *"I bought X shares"* | `ACTION_ADD` | **Intercept & Guard** -> Read existing `thesis.json` -> Present original thesis -> Ask: *"Why are you adding? What business metric improved?"* -> Update ledger. |
 | *"I want to sell [Ticker]"* / *"I sold X shares"* | `ACTION_SELL` | **Intercept & Guard** -> Read existing `thesis.json` -> Present original exit conditions -> Ask: *"Is a sell threshold triggered or is this panic?"* -> Update ledger. |
 | *"Audit portfolio"* / *"审查持仓"* / *"持仓巡检"* | `AUDIT_PORTFOLIO` | **Auto-refresh prices** -> Audit overweight positions for missing rationales -> **Check triggered exit conditions** -> Prompt user for Sell vs New Thesis. |
+| *"Generate report"* / *"生成复盘报告"* / *"导出持仓报告"* | `GENERATE_REPORT` | **Auto-refresh prices** -> Populate `report_template.md` -> Save to `history/YYYY-MM-DD-portfolio-report.md`. |
 | Periodic check / Quarterly earnings release | `ROUTINE_REVIEW` | Audit quarterly reports against recorded FCF/growth assumptions in `thesis.json`. |
 | *"Refresh stock prices"* / Update valuation | `REFRESH_PRICES` | Run `python3 ../bear-investment-journal/scripts/fetch_prices.py` to fetch latest market prices on demand. |
 
