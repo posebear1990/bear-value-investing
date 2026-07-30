@@ -14,7 +14,7 @@ This skill operates as a strict, specification-driven investment lifecycle state
 This skill strictly adheres to the following executable specs:
 1. ⚙️ **[state_machine.md](spec/state_machine.md)**: Defines the 4 mandatory lifecycle states (`INIT_BUY`, `ACTION_ADD`, `ACTION_SELL`, `ROUTINE_REVIEW`) and transition rules.
 2. 📋 **[input_output_contracts.md](spec/input_output_contracts.md)**: Specifies required financial inputs and guided questioning prompts for each stage.
-3. 💾 **[thesis_schema.json](spec/thesis_schema.json)**: JSON schema for persisting investment thesis cards in `investment_journal/<TICKER>/thesis.json`.
+3. 💾 **[thesis_schema.json](spec/thesis_schema.json)**: JSON schema for persisting investment thesis cards into `../bear-investment-journal/thesis_cards/<TICKER>.json`.
 
 ---
 
