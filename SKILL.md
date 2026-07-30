@@ -32,6 +32,7 @@ This skill strictly adheres to the following executable specs:
 | *"I want to buy [Ticker]"* / Initial Research | `INIT_BUY` | Request recent annual/quarterly reports -> Perform 4-Step breakdown -> Probe DCF/Yield -> Persist `thesis.json`. |
 | *"I want to add to [Ticker]"* / Buy more | `ACTION_ADD` | **Read existing `thesis.json`** -> Present original thesis -> Ask: *"What business metric improved?"* -> Evaluate fundamental improvement. |
 | *"I want to sell [Ticker]"* / Trim position | `ACTION_SELL` | **Read existing `thesis.json`** -> Present original exit conditions -> Ask: *"Is a sell threshold triggered or is this panic?"* -> Update log. |
+| *"Audit portfolio"* / *"审查持仓"* / *"持仓巡检"* | `AUDIT_PORTFOLIO` | **Auto-refresh prices** -> Audit overweight positions for missing rationales -> **Check triggered exit conditions** -> Prompt user for Sell vs New Thesis. |
 | Periodic check / Quarterly earnings release | `ROUTINE_REVIEW` | Audit quarterly reports against recorded FCF/growth assumptions in `thesis.json`. |
 | *"Refresh stock prices"* / Update valuation | `REFRESH_PRICES` | Run `python3 ../bear-investment-journal/scripts/fetch_prices.py` to fetch latest market prices on demand. |
 

@@ -12,7 +12,9 @@ This document specifies the mandatory states, transition triggers, and agent act
   ├── Trigger: User wants to buy new stock ─────────> [STATE: INIT_BUY]
   ├── Trigger: User wants to add position ──────────> [STATE: ACTION_ADD]
   ├── Trigger: User wants to sell / trim position ──> [STATE: ACTION_SELL]
-  └── Trigger: Quarterly review / routine check ───> [STATE: ROUTINE_REVIEW]
+  ├── Trigger: Periodic check / Routine review ─────> [STATE: ROUTINE_REVIEW]
+  ├── Trigger: "Audit portfolio" / "持仓巡检" ───────> [STATE: AUDIT_PORTFOLIO] ⚡️ NEW
+  └── Trigger: "Refresh prices" / "更新股价" ────────> [STATE: REFRESH_PRICES]
 ```
 
 ---
@@ -27,14 +29,14 @@ This document specifies the mandatory states, transition triggers, and agent act
 1. **Agent Action**: Request/fetch recent financial statements if missing.
 2. **Agent Action**: Execute Step 1 (Moat), Step 2 (Classification), Step 3 (Valuation/DCF), Step 4 (Risk/Safety).
 3. **Agent Action**: Present initial finding & prompt Socratic parameters.
-4. **Exit Action**: Generate and save persistent state file: `investment_journal/<TICKER>/thesis.json` and `thesis.md`.
+4. **Exit Action**: Generate and save persistent state file: `../bear-investment-journal/thesis_cards/<TICKER>.json` and `<TICKER>.md`.
 
 ---
 
 ## State 2: `ACTION_ADD` (Position Addition Gatekeeper)
 
 ### Mandatory Pre-conditions
-- Target `investment_journal/<TICKER>/thesis.json` MUST exist.
+- Target `../bear-investment-journal/thesis_cards/<TICKER>.json` MUST exist.
 
 ### Execution Workflow
 1. **Agent Action**: Intercept request. Read existing `thesis.json`.
@@ -53,7 +55,7 @@ This document specifies the mandatory states, transition triggers, and agent act
 ## State 3: `ACTION_SELL` (Position Sale / Trim Gatekeeper)
 
 ### Mandatory Pre-conditions
-- Target `investment_journal/<TICKER>/thesis.json` MUST exist.
+- Target `../bear-investment-journal/thesis_cards/<TICKER>.json` MUST exist.
 
 ### Execution Workflow
 1. **Agent Action**: Intercept request. Read existing `thesis.json`.
@@ -67,9 +69,24 @@ This document specifies the mandatory states, transition triggers, and agent act
 
 ---
 
-## State 4: `ROUTINE_REVIEW` (Periodic Thesis Audit)
+## State 4: `AUDIT_PORTFOLIO` (Active Portfolio Audit & Anti-Drift Inspection) ⚡️
+
+### Mandatory Pre-conditions
+- Portfolio ledger `../bear-investment-journal/portfolio.json` MUST exist.
+- Thesis cards in `../bear-investment-journal/thesis_cards/` available for audit.
 
 ### Execution Workflow
-1. Read all active `thesis.json` files in `investment_journal/`.
-2. Compare original revenue/FCF growth assumptions against newly released quarterly reports.
-3. Flag any thesis drift or thesis invalidation.
+1. **Auto-Refresh Data**: Run `python3 ../bear-investment-journal/scripts/fetch_prices.py` to get live valuation and current weights.
+2. **Audit 1: Concentration Boundary & Exception Check**:
+   - Check all active positions against configured `concentration_limits`.
+   - If position weight > `single_stock_overweight_cap` (e.g. >20%) AND missing `extreme_allocation_rationale`:
+     - **Prompt Action**: *"Stock [TICKER] ([Weight]%) is in overweight territory without a recorded exception rationale. Please provide your justification and target reduction timeline."*
+3. **Audit 2: Exit Condition Invalidation & Holding Drift Check**:
+   - For every holding, compare current market developments/earnings against recorded `exit_conditions`.
+   - If an exit condition HAS BEEN TRIGGERED (e.g. regulatory investigation, price target reached, profit margin collapse), but user still holds:
+     - **Prompt Action (Mandatory Choice)**:
+       > "⚠️ **[TICKER]** has triggered your recorded exit condition: **[Triggered Exit Condition]**. However, you still hold **[Weight]%**. 
+       > Please select an action:
+       > Option A: Execute sell/trim order according to pre-committed discipline.
+       > Option B: Provide a NEW fundamental thesis explaining why the old exit condition is no longer applicable, and update your thesis card."
+4. **Audit Summary**: Output a structured Audit Summary Table detailing positions needing user decision.
