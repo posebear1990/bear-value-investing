@@ -12,16 +12,19 @@ To prevent the user (and the AI agent) from accidentally or unconsciously bypass
 Whenever the user requests or mentions a position size modification:
 1. **HALT LEDGER MUTATION**: Do NOT modify `shares_count` or `portfolio.json` immediately.
 2. **FORCE STATE ROUTING**: Route the request to `INIT_BUY`, `ACTION_ADD`, or `ACTION_SELL`.
-3. **CHECK THESIS EXISTENCE & EXPLICITLY NOTIFY**: ⚡️ NEW
+3. **CHECK THESIS EXISTENCE & EXPLICITLY NOTIFY**:
    - Check if `../bear-investment-journal/thesis_cards/<TICKER>.json` exists.
    - **If NO prior thesis card exists**: The agent MUST explicitly state to the user first:
      > *"⚠️ **Notice**: No prior investment thesis card exists for [TICKER] in the system. I will initialize a new thesis card while processing this position update."*
    - **If a thesis card exists**: Read and present the original historical thesis points and exit conditions.
-4. **EXECUTE SOCRATIC PROBE**: Ask the user:
-   > *"You are updating your position in [TICKER]. To maintain our investment discipline:
-   > 1. What is your fundamental rationale and business logic for this change?
-   > 2. Has there been a change in earnings, moat, or valuation safety margin?"*
-5. **MUTATE ONLY UPON RATIONALE CONFIRMATION**: Update `portfolio.json` and append a transaction log ONLY after the user provides their fundamental logic.
+4. **EXECUTE SOCRATIC PROBE & ALIGNMENT**:
+   - Evaluate if the transaction aligns with pre-stored thesis (`ALIGNMENT_MATCH`) or drifts (`ALIGNMENT_DRIFT`).
+5. **ATOMIC MUTATION 4-STEP PROTOCOL (原子化落盘 4 步曲)**: ⚡️ MANDATORY
+   Upon user confirmation, the agent MUST execute the following 4 steps atomically:
+   - **Step 1**: Update `shares_count` in `../bear-investment-journal/portfolio.json`.
+   - **Step 2**: Update/append `history_log` in `../bear-investment-journal/thesis_cards/<TICKER>.json`.
+   - **Step 3**: **MANDATORY**: Append a transaction log entry into `../bear-investment-journal/history/transactions.json`.
+   - **Step 4**: Run `python3 ../bear-investment-journal/scripts/fetch_prices.py` to recalculate valuation.
 
 ---
 
@@ -57,57 +60,30 @@ Whenever the user requests or mentions a position size modification:
 
 ## State 2: `ACTION_ADD` (Position Addition Gatekeeper)
 
-### Mandatory Pre-conditions
-- Check target `../bear-investment-journal/thesis_cards/<TICKER>.json`. If missing, notify user and initialize card.
-
 ### Execution Workflow
 1. **Agent Action**: Intercept request. Read existing `thesis.json` or state missing status.
-2. **Agent Prompt (Mandatory Question)**:
-   > "You are proposing to ADD to **[TICKER]**. Here were your original core investment theses recorded on **[DATE]**:
-   > 1. [Thesis 1]
-   > 2. [Thesis 2]
-   >
-   > What specific fundamental metrics or earnings data have improved to justify adding to this position? Is this fundamental-driven or price-movement driven?"
-3. **Agent Evaluation**: Compare user's rationale against initial thesis.
-   - If fundamental logic improved: Approve position expansion. Update `thesis.json`.
-   - If purely price driven without thesis improvement: Trigger Warning and enforce cooling-off period.
+2. **Agent Evaluation & Probe**: Verify thesis alignment.
+3. **Atomic Execution**: Execute **Atomic Mutation 4-Step Protocol** (update portfolio, thesis card, append `transactions.json`, and run `fetch_prices.py`).
 
 ---
 
 ## State 3: `ACTION_SELL` (Position Sale / Trim Gatekeeper)
 
-### Mandatory Pre-conditions
-- Check target `../bear-investment-journal/thesis_cards/<TICKER>.json`. If missing, explicitly inform user first before proceeding.
-
 ### Execution Workflow
 1. **Agent Action**: Intercept request. Read existing `thesis.json` (or state missing notice).
-2. **Agent Prompt (Mandatory Question)**:
-   > "You are proposing to SELL/TRIM **[TICKER]**.
-   > Has the core business moat deteriorated, or has the stock valuation exceeded your sell threshold? Or are you reacting to market panic?"
-3. **Agent Evaluation**: Log sell rationale in thesis history.
+2. **Agent Evaluation & Probe**: Verify sell rationale against exit conditions.
+3. **Atomic Execution**: Execute **Atomic Mutation 4-Step Protocol** (update portfolio, thesis card, append `transactions.json`, and run `fetch_prices.py`).
 
 ---
 
 ## State 4: `AUDIT_PORTFOLIO` (Active Portfolio Audit & Anti-Drift Inspection)
 
-### Mandatory Pre-conditions
-- Portfolio ledger `../bear-investment-journal/portfolio.json` MUST exist.
-- Thesis cards in `../bear-investment-journal/thesis_cards/` available for audit.
-
 ### Execution Workflow
 1. **Auto-Refresh Data**: Run `python3 ../bear-investment-journal/scripts/fetch_prices.py` to get live valuation and current weights.
 2. **Audit 1: Concentration Boundary & Exception Check**:
    - Check all active positions against configured `concentration_limits`.
-   - If position weight > `single_stock_overweight_cap` (e.g. >20%) AND missing `extreme_allocation_rationale`:
-     - **Prompt Action**: *"Stock [TICKER] ([Weight]%) is in overweight territory without a recorded exception rationale. Please provide your justification and target reduction timeline."*
 3. **Audit 2: Exit Condition Invalidation & Holding Drift Check**:
-   - For every holding, compare current market developments/earnings against recorded `exit_conditions`.
-   - If an exit condition HAS BEEN TRIGGERED (e.g. regulatory investigation, price target reached, profit margin collapse), but user still holds:
-     - **Prompt Action (Mandatory Choice)**:
-       > "⚠️ **[TICKER]** has triggered your recorded exit condition: **[Triggered Exit Condition]**. However, you still hold **[Weight]%**. 
-       > Please select an action:
-       > Option A: Execute sell/trim order according to pre-committed discipline.
-       > Option B: Provide a NEW fundamental thesis explaining why the old exit condition is no longer applicable, and update your thesis card."
+   - Compare current market developments against recorded `exit_conditions`.
 4. **Audit Summary**: Output a structured Audit Summary Table detailing positions needing user decision.
 
 ---
@@ -115,6 +91,6 @@ Whenever the user requests or mentions a position size modification:
 ## State 5: `GENERATE_REPORT` (Periodic Review & Executive Report Export)
 
 ### Execution Workflow
-1. **Auto-Refresh Data**: Run `python3 ../bear-investment-journal/scripts/fetch_prices.py` to calculate exact current values, returns, and concentration levels.
+1. **Auto-Refresh Data**: Run `python3 ../bear-investment-journal/scripts/fetch_prices.py`.
 2. **Assemble Portfolio Report**: Populate `../bear-investment-journal/templates/report_template.md`.
 3. **Export Report**: Save to `../bear-investment-journal/history/YYYY-MM-DD-portfolio-report.md`.
