@@ -12,11 +12,16 @@ To prevent the user (and the AI agent) from accidentally or unconsciously bypass
 Whenever the user requests or mentions a position size modification:
 1. **HALT LEDGER MUTATION**: Do NOT modify `shares_count` or `portfolio.json` immediately.
 2. **FORCE STATE ROUTING**: Route the request to `INIT_BUY`, `ACTION_ADD`, or `ACTION_SELL`.
-3. **EXECUTE SOCRATIC PROBE**: Ask the user:
+3. **CHECK THESIS EXISTENCE & EXPLICITLY NOTIFY**: ⚡️ NEW
+   - Check if `../bear-investment-journal/thesis_cards/<TICKER>.json` exists.
+   - **If NO prior thesis card exists**: The agent MUST explicitly state to the user first:
+     > *"⚠️ **Notice**: No prior investment thesis card exists for [TICKER] in the system. I will initialize a new thesis card while processing this position update."*
+   - **If a thesis card exists**: Read and present the original historical thesis points and exit conditions.
+4. **EXECUTE SOCRATIC PROBE**: Ask the user:
    > *"You are updating your position in [TICKER]. To maintain our investment discipline:
    > 1. What is your fundamental rationale and business logic for this change?
    > 2. Has there been a change in earnings, moat, or valuation safety margin?"*
-4. **MUTATE ONLY UPON RATIONALE CONFIRMATION**: Update `portfolio.json` and append a transaction log ONLY after the user provides their fundamental logic.
+5. **MUTATE ONLY UPON RATIONALE CONFIRMATION**: Update `portfolio.json` and append a transaction log ONLY after the user provides their fundamental logic.
 
 ---
 
@@ -30,7 +35,7 @@ Whenever the user requests or mentions a position size modification:
   ├── Trigger: User wants to sell / trim position ──> [STATE: ACTION_SELL] (Intercept & Probe)
   ├── Trigger: Periodic check / Routine review ─────> [STATE: ROUTINE_REVIEW]
   ├── Trigger: "Audit portfolio" / "持仓巡检" ───────> [STATE: AUDIT_PORTFOLIO]
-  ├── Trigger: "Generate report" / "生成复盘报告" ───> [STATE: GENERATE_REPORT] ⚡️ NEW
+  ├── Trigger: "Generate report" / "生成复盘报告" ───> [STATE: GENERATE_REPORT]
   └── Trigger: "Refresh prices" / "更新股价" ────────> [STATE: REFRESH_PRICES]
 ```
 
@@ -53,10 +58,10 @@ Whenever the user requests or mentions a position size modification:
 ## State 2: `ACTION_ADD` (Position Addition Gatekeeper)
 
 ### Mandatory Pre-conditions
-- Target `../bear-investment-journal/thesis_cards/<TICKER>.json` MUST exist.
+- Check target `../bear-investment-journal/thesis_cards/<TICKER>.json`. If missing, notify user and initialize card.
 
 ### Execution Workflow
-1. **Agent Action**: Intercept request. Read existing `thesis.json`.
+1. **Agent Action**: Intercept request. Read existing `thesis.json` or state missing status.
 2. **Agent Prompt (Mandatory Question)**:
    > "You are proposing to ADD to **[TICKER]**. Here were your original core investment theses recorded on **[DATE]**:
    > 1. [Thesis 1]
@@ -64,7 +69,7 @@ Whenever the user requests or mentions a position size modification:
    >
    > What specific fundamental metrics or earnings data have improved to justify adding to this position? Is this fundamental-driven or price-movement driven?"
 3. **Agent Evaluation**: Compare user's rationale against initial thesis.
-   - If fundamental logic improved: Approve position expansion (e.g. increase tranche from 20% to 50%). Update `thesis.json`.
+   - If fundamental logic improved: Approve position expansion. Update `thesis.json`.
    - If purely price driven without thesis improvement: Trigger Warning and enforce cooling-off period.
 
 ---
@@ -72,15 +77,12 @@ Whenever the user requests or mentions a position size modification:
 ## State 3: `ACTION_SELL` (Position Sale / Trim Gatekeeper)
 
 ### Mandatory Pre-conditions
-- Target `../bear-investment-journal/thesis_cards/<TICKER>.json` MUST exist.
+- Check target `../bear-investment-journal/thesis_cards/<TICKER>.json`. If missing, explicitly inform user first before proceeding.
 
 ### Execution Workflow
-1. **Agent Action**: Intercept request. Read existing `thesis.json`.
+1. **Agent Action**: Intercept request. Read existing `thesis.json` (or state missing notice).
 2. **Agent Prompt (Mandatory Question)**:
-   > "You are proposing to SELL/TRIM **[TICKER]**. Here were your recorded exit conditions:
-   > 1. [Exit Condition 1]
-   > 2. [Exit Condition 2]
-   >
+   > "You are proposing to SELL/TRIM **[TICKER]**.
    > Has the core business moat deteriorated, or has the stock valuation exceeded your sell threshold? Or are you reacting to market panic?"
 3. **Agent Evaluation**: Log sell rationale in thesis history.
 
@@ -110,15 +112,9 @@ Whenever the user requests or mentions a position size modification:
 
 ---
 
-## State 5: `GENERATE_REPORT` (Periodic Review & Executive Report Export) ⚡️
+## State 5: `GENERATE_REPORT` (Periodic Review & Executive Report Export)
 
 ### Execution Workflow
 1. **Auto-Refresh Data**: Run `python3 ../bear-investment-journal/scripts/fetch_prices.py` to calculate exact current values, returns, and concentration levels.
-2. **Assemble Portfolio Report**: Populate `../bear-investment-journal/templates/report_template.md` with:
-   - Total portfolio value, cash reserves, and unrealized P&L.
-   - 3-Tier Concentration Risk Matrix.
-   - Active holdings performance table (cost, current price, return %).
-   - Zero-position Watchlist Pipeline Pool evaluation.
-   - Invalidation and exit trigger checklist.
-3. **Export Report**: Save the final report to `../bear-investment-journal/history/YYYY-MM-DD-portfolio-report.md`.
-4. **Display Summary**: Present the summary to the user in chat.
+2. **Assemble Portfolio Report**: Populate `../bear-investment-journal/templates/report_template.md`.
+3. **Export Report**: Save to `../bear-investment-journal/history/YYYY-MM-DD-portfolio-report.md`.

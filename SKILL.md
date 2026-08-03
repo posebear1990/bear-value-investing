@@ -41,6 +41,7 @@ This skill strictly adheres to the following executable specs:
 
 ## Key Agent Rules
 - **MUST NOT** directly update `portfolio.json` or `thesis_cards/` based on casual remarks without executing the Socratic rationale probe.
+- **MUST** check for `thesis_cards/<TICKER>.json` and **EXPLICITLY INFORM THE USER FIRST** if no prior thesis card exists in the system before initializing one.
 - **MUST** route all position changes through `INIT_BUY`, `ACTION_ADD`, or `ACTION_SELL`.
 - **MUST** read existing `thesis.json` before answering any ADD or SELL requests.
 - **MUST** enforce state transitions defined in `spec/state_machine.md`.
